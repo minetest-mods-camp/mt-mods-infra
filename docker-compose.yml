@@ -5,3 +5,34 @@ services:
     image: 42wim/matterbridge:1.23.2
     volumes:
      - ./matterbridge:/etc/matterbridge
+
+ nodered:
+  image: nodered/node-red:2.1.4-12-minimal
+  restart: always
+  volumes:
+   - "./data/nodered:/data"
+   - "./nodered/nodered.js:/data/settings.js"
+  logging:
+   options:
+    max-size: 50m
+
+ nginx:
+  image: nginx:1.21.5
+  networks:
+    - terminator
+    - default
+  restart: always
+    - nodered
+  labels:
+    - "traefik.enable=true"
+    - "traefik.docker.network=terminator"
+    - "traefik.http.routers.mt-mods.rule=Host(`mt-mods.minetest.land`)"
+    - "traefik.http.services.mt-mods.loadbalancer.server.port=80"
+    - "traefik.http.routers.mt-mods.entrypoints=websecure"
+    - "traefik.http.routers.mt-mods.tls.certresolver=default"
+  volumes:
+    - "./nginx/nginx.conf:/etc/nginx/nginx.conf:ro"
+    - "./nginx/routes:/routes"
+  logging:
+   options:
+    max-size: 50m
